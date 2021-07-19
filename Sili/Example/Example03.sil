@@ -1,0 +1,24 @@
+type("Calcualte 67% of 3500")
+a = 3500.0 % 67.0
+type(a)
+type("Find the square root of that value")
+a = a ^ 0.5
+type(a)
+a *= a
+type(a)
+type("Find the sum of 55, 67, 124, 572, 126, 121")
+function sum(a, b)
+{
+    finalSum = 0
+    for(i = 0; i < b; i++i)
+    {
+        finalSum += a[i]
+    }
+    return finalSum
+}
+arr = [55, 67, 124, 572, 126, 121]
+x = sum(arr, 6)
+type(x)
+type("Find the average of the sum")
+x /= 6
+type(x)

@@ -1,0 +1,6 @@
+type("A graph has points (3, 2) and (12, 16) find the equation of the line")
+line(3, 2, 12, 16)
+type("Find the point (Y, 5) with the equation y= 5x + 12")
+pointy(5, 5, 12)
+type("Find the point (24, X) with the equation y= 5x + 12")
+pointx(5, 24, 12)

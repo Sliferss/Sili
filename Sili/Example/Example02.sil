@@ -1,0 +1,19 @@
+type("A right angled triangle STR has a right angle at STR")
+type("53o at SRT and legth 14 at ST")
+type("Calculate the length RT on this triangle")
+rt = 14.0 / (tan(53))
+type("RT = " + rt)
+
+type("Triangle ABC has a right angle")
+type("Angle BAC is 25o")
+type("AC = 12.5cm")
+type("Calculate length AB")
+ab = 12.5 * sin(25)
+type("AB = " + ab)
+
+type("ABC is a right-angled triangle")
+type("Length AC is 10.5 and Length AB is 8")
+type("Calculate angle ACB")
+x = 8.0 / 10.5
+acb = isin(x)
+type("ACB = " + acb)

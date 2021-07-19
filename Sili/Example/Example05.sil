@@ -1,0 +1,20 @@
+type("Find the time it would take to travel 50units, 262units and 143units at 8units/s")
+arr = [50, 262, 143]
+i = 0
+loop(3)
+{
+  type("Distane " + arr[i])
+  time(arr[i], 8)
+  i++i
+}
+
+type("Find the Distance travelled if travelling at 12unit/s, 54units/s and 99units/s for 20 minutes")
+seconds = 20 * 60
+speedArr = [12, 54, 99]
+i = 0
+loop(3)
+{
+  type("Speed " + speedArr[i])
+  distance(speedArr[i], 8)
+  i++i
+}

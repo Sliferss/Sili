@@ -1,0 +1,20 @@
+function randomFunction(a, b , c, d)
+{
+    i = 0
+    while (i != 6)
+    {
+        type(a[i])
+        type(b[i])
+        i++i
+    }
+    type(c)
+    type(d)
+    i = 0
+    typerepeat(b[i], 6, i++i)
+}
+
+Aarr = [1, 43, 45, 22, 125, 6]
+Barr = ["Hello", "There", "This", "is", "A", "Function"]
+c = "string"
+d = 1
+randomFunction(Aarr, Barr , c, d)

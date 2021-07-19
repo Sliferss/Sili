@@ -1,0 +1,573 @@
+/*
+ * A simple expression parser and evaluator
+ *
+ */
+
+options {
+  LOOKAHEAD = 1;
+  CHOICE_AMBIGUITY_CHECK = 2;
+  OTHER_AMBIGUITY_CHECK = 1;
+  STATIC = false;
+  DEBUG_PARSER = false;
+  DEBUG_LOOKAHEAD = false;
+  DEBUG_TOKEN_MANAGER = false;
+  ERROR_REPORTING = true;
+  JAVA_UNICODE_ESCAPE = false;
+  UNICODE_INPUT = false;
+  IGNORE_CASE = false;
+  USER_TOKEN_MANAGER = false;
+  USER_CHAR_STREAM = false;
+  BUILD_PARSER = true;
+  BUILD_TOKEN_MANAGER = true;
+  SANITY_CHECK = true;
+  FORCE_LA_CHECK = false;
+  MULTI = true;
+  VISITOR = true;
+  JDK_VERSION = "1.8";
+  NODE_DEFAULT_VOID = true;
+  NODE_EXTENDS = "uk.ac.derby.ldi.sili2.interpreter.BaseASTNode";
+  NODE_PACKAGE = "uk.ac.derby.ldi.sili2.parser.ast";
+  JJTREE_OUTPUT_DIRECTORY = "ast";
+}
+
+PARSER_BEGIN(Sili)
+package uk.ac.derby.ldi.sili2.parser.ast;
+public class Sili {}
+PARSER_END(Sili)
+
+/*
+ *
+ * Lexer definitions
+ *
+ */
+
+SKIP : /* WHITE SPACE */
+{
+  " "
+| "\t"
+| "\n"
+| "\r"
+| "\f"
+}
+
+SPECIAL_TOKEN : /* COMMENTS */
+{
+  <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* ("\n"|"\r"|"\r\n")>
+| <FORMAL_COMMENT: "/**" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/">
+| <MULTI_LINE_COMMENT: "/*" (~["*"])* "*" ("*" | (~["*","/"] (~["*"])* "*"))* "/">
+}
+
+TOKEN [IGNORE_CASE] : /* RESERVED WORDS AND LITERALS */
+{
+  < IF: "IF" >
+| < ELSE: "ELSE" >
+| < FOR: "FOR" >
+| < LOOP: "LOOP" >
+
+| < WHILE: "WHILE" >
+| < COS: "COS" >
+| < SIN: "SIN" >
+| < TAN: "TAN" >
+| < ICOS: "ICOS" >
+| < ISIN: "ISIN" >
+| < ITAN: "ITAN" >
+| < QUAD: "quadratic" >
+| < LINE: "line" >
+| < SPEED: "speed" >
+| < DIST: "distance" >
+| < TIME: "time" >
+| < POINTY: "pointy" >
+| < POINTX: "pointx" >
+
+| < TYPE: "TYPE" >
+| < TYPEREPEAT: "TYPErepeat" >
+| < FN: "FUNCTION" >
+| < RETURN: "RETURN" >
+| < OR: "OR" >
+| < AND: "AND" >
+| < NOT: "NOT" >
+| < TRUE: "TRUE" >
+| < FALSE: "FALSE" >
+}
+
+TOKEN : /* LITERALS */
+{
+  < INTEGER_LITERAL:
+        <DECIMAL_LITERAL> (["l","L"])?
+      | <HEX_LITERAL> (["l","L"])?
+      | <OCTAL_LITERAL> (["l","L"])?
+  >
+|
+  < #DECIMAL_LITERAL: ["1"-"9"] (["0"-"9"])* >
+|
+  < #HEX_LITERAL: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+ >
+|
+  < #OCTAL_LITERAL: "0" (["0"-"7"])* >
+|
+  < FLOATING_POINT_LITERAL:
+        (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])?
+      | "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])?
+      | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])?
+      | (["0"-"9"])+ (<EXPONENT>)? ["f","F","d","D"]
+  >
+|
+  < #EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+ >
+|
+  < STRING_LITERAL:
+     ( 
+      "\""
+      (   (~["\"","\\","\n","\r"])
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+            )
+          )
+      )*
+      "\""
+     )
+   | (
+      "'"
+      (   (~["\'","\\","\n","\r"])
+        | ("\\"
+            ( ["n","t","b","r","f","\\","'","\""]
+            | ["0"-"7"] ( ["0"-"7"] )?
+            | ["0"-"3"] ["0"-"7"] ["0"-"7"]
+            )
+          )
+      )*
+      "'"
+     )
+  >
+}
+
+TOKEN : /* IDENTIFIERS */
+{
+  < IDENTIFIER: <LETTER> (<LETTER>|<DIGIT>|"#")* >
+| < #LETTER:
+      [
+       "\u0024",
+       "\u0041"-"\u005a",
+       "\u005f",
+       "\u0061"-"\u007a",
+       "\u00c0"-"\u00d6",
+       "\u00d8"-"\u00f6",
+       "\u00f8"-"\u00ff",
+       "\u0100"-"\u1fff",
+       "\u3040"-"\u318f",
+       "\u3300"-"\u337f",
+       "\u3400"-"\u3d2d",
+       "\u4e00"-"\u9fff",
+       "\uf900"-"\ufaff"
+      ]
+  >
+|
+  < #DIGIT:
+      [
+       "\u0030"-"\u0039",
+       "\u0660"-"\u0669",
+       "\u06f0"-"\u06f9",
+       "\u0966"-"\u096f",
+       "\u09e6"-"\u09ef",
+       "\u0a66"-"\u0a6f",
+       "\u0ae6"-"\u0aef",
+       "\u0b66"-"\u0b6f",
+       "\u0be7"-"\u0bef",
+       "\u0c66"-"\u0c6f",
+       "\u0ce6"-"\u0cef",
+       "\u0d66"-"\u0d6f",
+       "\u0e50"-"\u0e59",
+       "\u0ed0"-"\u0ed9",
+       "\u1040"-"\u1049"
+      ]
+  >
+}
+
+TOKEN : /* SEPARATORS */
+{
+  < LPAREN: "(" >
+| < RPAREN: ")" >
+| < LBRACE: "{" >
+| < RBRACE: "}" >
+| < LBRACKET: "[" >
+| < RBRACKET: "]" >
+| < SEMICOLON: ";" >
+| < COMMA: "," >
+| < DOT: "." >
+| < PP: "++" >
+| < MM: "--" >
+}
+
+TOKEN : /* OPERATOR SYMBOLS */
+{
+  < ASSIGN: "=" >
+| < PEQ: "+=" >
+| < MEQ: "-=" >
+| < UEQ: "@=" >
+| < EQ: "==" >
+| < GT: ">" >
+| < LT: "<" >
+| < LE: "<=" >
+| < GE: ">=" >
+| < NE: "!=" >
+| < HOOK: "?" >
+| < COLON: ":" >
+| < PLUS: "+" >
+| < SUBT: "-" >
+| < STAR: "*" >
+| < SLASH: "/" >
+| < REM: "%" >
+| < POW: "^" >
+}
+
+/***********************************************
+ *          THE GRAMMAR STARTS HERE            *
+ ***********************************************/
+
+ASTCode code() #Code :
+{}
+{
+     			      statement() ( statement() )* <EOF>  {return jjtThis;}
+}
+
+void statement() #Statement :
+{}
+{
+					LOOKAHEAD(2) assignment()
+				|   LOOKAHEAD(3) arrayassignment()
+				|	fndef()
+				|	block()
+				|	ifstatement()	
+				|	forloop()
+				|   whileloop()
+				| 	loopx()
+				|	type()
+				| 	typerepeat()
+				| 	quadratic()
+				| 	line()
+				| 	speed()
+				| 	distance()
+				| 	time()
+				| 	pointy()
+				| 	pointx()
+				|	call()
+}
+
+void block() #Block :
+{}
+{
+					"{" ( statement() )* "}"
+}
+
+void parmlist() #Parmlist :
+{}
+{
+					"(" [ identifier() ( "," identifier() )* ] ")"
+}
+
+void fnbody() #FnBody :
+{}
+{
+					( statement() )* 
+}
+
+void fndef() #FnDef :
+{}
+{
+					<FN> identifier() parmlist() "{" 
+						fnbody()
+						[ <RETURN> returnexpr() {jjtThis.fnHasReturn = true;} ] 
+					"}"
+}
+
+void returnexpr() #ReturnExpression :
+{}
+{
+					expression()
+}
+
+void arrayassignment():
+{}
+{
+  					LOOKAHEAD(5)identifier() "[" expression() "]" "=" expression() #ArrayAssignment(3)
+  			| 		LOOKAHEAD(5)identifier() "[" expression() "]" "+=" expression() #ArrayAssignmentIncrement(3)
+  			| 		LOOKAHEAD(5)identifier() "[" expression() "]" "-=" expression() #ArrayAssignmentDecrement(3)
+  			| 		LOOKAHEAD(5)identifier() "[" expression() "]" "*=" expression() #ArrayAssignmentMul(3)
+  			| 		LOOKAHEAD(5)identifier() "[" expression() "]" "/=" expression() #ArrayAssignmentDiv(3)
+}
+
+void assignment() :
+{}
+{
+					LOOKAHEAD(2)identifier() "=" expression() #Assignment(2)
+			| 		LOOKAHEAD(2)identifier() "+=" expression() #AssignmentIncrement(2)
+			| 		LOOKAHEAD(2)identifier() "-=" expression() #AssignmentDecrement(2)
+			| 		LOOKAHEAD(2)identifier() "*=" expression() #AssignmentMul(2)
+			| 		LOOKAHEAD(2)identifier() "/=" expression() #AssignmentDiv(2)
+			| 		LOOKAHEAD(2)identifier() "++" expression() #AssignmentIncrementSolo(2)
+			| 		LOOKAHEAD(2)identifier() "--" expression() #AssignmentDecrementSolo(2)
+}
+
+//void assignmentIncrement() :
+//{}
+//{
+//					identifier() "+=" expression() #AssignmentIncrement(2)
+//}
+//
+//void assignmentIncrementSolo() :
+//{}
+//{
+//					identifier() "++" #AssignmentIncrement(1)
+//}
+//
+//void assignmentDecrement() :
+//{}
+//{
+//					identifier() "-=" expression() #AssignmentDecrement(2)
+//}
+
+
+void ifstatement() #IfStatement :
+{}
+{
+  					<IF> "(" expression() ")" statement() 
+  					[ LOOKAHEAD(1) <ELSE> statement() {jjtThis.ifHasElse = true;} ]
+}
+
+void forloop() #For :
+{}
+{
+  					<FOR> "(" assignment() ";" expression() ";" assignment() ")" statement()
+}
+
+void whileloop() #While :
+{}
+{
+  					<WHILE> "(" expression() ")" statement()
+}
+
+void loopx() #LoopX :
+{}
+{
+  					<LOOP> "(" expression() ")" statement()
+}
+
+void type() :
+{}
+{
+					<TYPE> "(" expression() ")" #Type(1)
+}
+
+void typerepeat() :
+{}
+{
+					<TYPEREPEAT> "(" expression() "," expression() "," assignment() ")" #TypeRepeat(3)
+}
+
+void quadratic() #Quad(3) :
+{}
+{
+  					<QUAD> "(" expression() "," expression() "," expression() ")"
+}
+
+void line() #Line(4) :
+{}
+{
+  					<LINE> "(" expression() "," expression() "," expression() "," expression() ")"
+}
+
+void pointy() #PointY :
+{}
+{
+  					<POINTY> "(" expression() "," expression() "," expression() ")"
+}
+
+void pointx() #PointX :
+{}
+{
+  					<POINTX> "(" expression() "," expression() "," expression() ")"
+}
+
+void call() #Call :
+{}
+{
+					identifier() arglist()
+}
+
+void speed() #Speed :
+{}
+{
+  					<SPEED> "(" expression() "," expression() ")"
+}
+
+void distance() #Distance :
+{}
+{
+  					<DIST> "(" expression() "," expression() ")"
+}
+
+void time() #Time :
+{}
+{
+  					<TIME> "(" expression() "," expression() ")"
+}
+
+void arglist() #ArgList :
+{}
+{
+					"(" [ expression() ] ( "," expression() )* ")"
+}
+
+//
+// Expressions
+//
+
+void expression() :
+{}
+{
+                  or_expression()
+}
+
+void or_expression() : 
+{} 
+{ 
+			      and_expression() ( <OR> and_expression() #Or(2) )* 
+}
+
+void and_expression() : 
+{} 
+{ 
+			      compare_expression() ( <AND> compare_expression() #And(2) )*
+}
+
+void compare_expression() : 
+{} 
+{ 
+                              add_expression() [
+                                 "=="  add_expression() #CompEqual(2)
+                               | "<>" add_expression() #CompNequal(2)
+                               | ">=" add_expression() #CompGTE(2)
+                               | "<=" add_expression() #CompLTE(2)
+                               | ">"  add_expression() #CompGT(2)
+                               | "<"  add_expression() #CompLT(2)
+                               | "!=" add_expression() #CompNequal(2)
+                               ]
+}
+
+void add_expression() : 
+{} 
+{
+                              mul_expression() (
+                                  "+"  mul_expression() #Add(2)
+                                | "-"  mul_expression() #Subtract(2)
+                              )*
+}
+
+void mul_expression() : 
+{} 
+{ 
+			      			  math_expression() ( 
+                                  "*" math_expression() #Times(2)
+                                | "/" math_expression() #Divide(2)
+                              )*
+}
+
+void math_expression() :
+{}
+{
+							  unary_expression() (
+                                  "^" unary_expression() #Pow(2)
+                                | "%" unary_expression() #Percent(2)
+                              )*
+}
+
+void unary_expression() :
+{}
+{
+                              <NOT> unary_expression() #UnaryNot(1)
+                            | "+"   unary_expression() #UnaryPlus(1)
+                            | "-"   unary_expression() #UnaryMinus(1)
+                            | <COS> unary_expression() #Cos(1)
+                            | <SIN> unary_expression() #Sin(1)
+                           	| <TAN> unary_expression() #Tan(1)
+                           	| <ICOS> unary_expression() #ICos(1)
+                            | <ISIN> unary_expression() #ISin(1)
+                            | <ITAN> unary_expression() #ITan(1)
+                            | primary_expression()
+}
+
+
+void primary_expression() : 
+{}
+{
+                              literal()
+                            | LOOKAHEAD(2) fn_invoke()
+                            | LOOKAHEAD(2) array_index()
+                            | dereference()
+                            | "(" expression() ")"
+                            | arraylist()
+}
+
+void arraylist() #ArrayList :
+{}
+{
+  						"[" [ expression() ( "," expression() )* ] "]"
+}
+
+void fn_invoke() #FnInvoke :
+{}
+{
+							identifier() arglist()
+}
+
+void array_index() #ArrayIndex :
+{}
+{
+  							identifier() "[" expression() "]"
+}
+
+void literal() :
+{}
+{
+							  integer()
+                            | character()							  	
+							| rational()
+							| bool()
+}
+
+void identifier() #Identifier :
+{Token t;}
+{
+	t = <IDENTIFIER> {jjtThis.tokenValue = t.image;}
+}
+
+void dereference() #Dereference :
+{Token t;}
+{
+	t = <IDENTIFIER> {jjtThis.tokenValue = t.image;}
+}
+
+void character() #Character :
+{Token t;}
+{
+	t = <STRING_LITERAL> {jjtThis.tokenValue = t.image;}
+}
+
+void integer() #Integer : 
+{Token t;} 
+{ 
+	t = <INTEGER_LITERAL> {jjtThis.tokenValue = t.image;}
+}
+
+void rational() #Rational : 
+{Token t;} 
+{ 
+	t = <FLOATING_POINT_LITERAL> {jjtThis.tokenValue = t.image;}
+}
+
+void bool() : 
+{} 
+{ 
+			      <TRUE> #True
+                | <FALSE> #False
+}
